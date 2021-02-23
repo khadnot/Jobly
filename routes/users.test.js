@@ -11,6 +11,7 @@ const {
   commonBeforeEach,
   commonAfterEach,
   commonAfterAll,
+  testJobIds,
   u1Token,
   u2Token,
   adminToken
@@ -200,6 +201,7 @@ describe("GET /users/:username", function () {
         lastName: "U1L",
         email: "user1@user.com",
         isAdmin: false,
+        applications: [testJobIds[0]]
       },
     });
   });
@@ -215,6 +217,7 @@ describe("GET /users/:username", function () {
         lastName: "U1L",
         email: "user1@user.com",
         isAdmin: false,
+        applications: [testJobIds[0]]
       },
     });
   });
@@ -376,3 +379,49 @@ describe("DELETE /users/:username", function () {
     expect(resp.statusCode).toEqual(404);
   });
 });
+
+/******************************************* POST /users/:username/jobs/:id */
+
+describe("POST /users/:username/jobs/:id", () => {
+  test("works for admin", async () => {
+    const resp = await request(app)
+        .post(`/users/u1/jobs/${testJobIds[1]}`)
+        .set("authorization", `Bearer ${adminToken}`);
+    expect(resp.body).toEqual({ applied: testJobIds[1] });
+  });
+
+  test("works for same user", async () => {
+    const resp = await request(app)
+        .post(`/users/u1/jobs/${testJobIds[1]}`)
+        .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.body).toEqual({ applied: testJobIds[1] });
+  });
+
+  test("unauthorized for other users", async () => {
+    const resp = await request(app)
+        .post(`/users/u1/jobs/${testJobIds[1]}`)
+        .set("authorization", `Bearer ${u2Token}`);
+    expect(resp.statusCode).toEqual(401);
+  });
+
+  test("unauthorized for non-users", async () => {
+    const resp = await request(app)
+        .post(`/users/u1/jobs/${testJobIds[1]}`);
+    expect(resp.statusCode).toEqual(401);
+  });
+
+  test("not found for no such username", async () => {
+    const resp = await request(app)
+        .post(`/users/notreal/jobs/${testJobIds[1]}`)
+        .set("authorization", `Bearer ${adminToken}`);
+    expect(resp.statusCode).toEqual(404);
+  });
+
+  test("not found for no such job", async function () {
+    const resp = await request(app)
+        .post(`/users/u1/jobs/999`)
+        .set("authorization", `Bearer ${adminToken}`);
+    expect(resp.statusCode).toEqual(404);
+  });
+});
+
