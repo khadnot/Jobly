@@ -39,19 +39,32 @@ router.post("/", ensureAdmin, async (req, res, next) => {
 
 /** GET jobs
  * 
+ * Optional searchFilters:
+ * - title: filter by case-insensitive title
+ * - minSalary: job salary that's >= minSalary
+ * - hasEquity: if true, filters jobs with equity > 0
+ * 
+ * Returns:
  * { jobs: [{ id, title, salary, equity, companyHandle, companyName }, ...]}
  * 
  * Authorization required: none
 */
 
 router.get("/", async (req, res, next) => {
+    const searchQuery = req.query;
+    // convert minSalary to int and hasEquity to boolean
+    if (searchQuery.minSalary !== undefined) {
+        searchQuery.minSalary = +searchQuery.minSalary;
+    }
+    searchQuery.hasEquity = searchQuery.hasEquity === "true";
+
     try {
-        const validator = jsonschema.validate(req.body, jobSearchSchema);
+        const validator = jsonschema.validate(searchQuery, jobSearchSchema);
         if (!validator.valid) {
             const errs = validator.errors.map(e => e.stack);
             throw new BadRequestError(errs);
         }
-        const jobs = await Job.findAll(req.body);
+        const jobs = await Job.findAll(searchQuery);
         return res.status(201).json({ jobs });
     } catch (err) {
         return next(err);

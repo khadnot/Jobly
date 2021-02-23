@@ -93,21 +93,24 @@ describe("GET /jobs", () => {
               title: "Job1",
               salary: 100,
               equity: "0.010",
-              companyHandle: "c1"
+              companyHandle: "c1",
+              companyName: "C1"
             },
             {
               id: expect.any(Number),
               title: "Job2",
               salary: 200,
               equity: "0.020",
-              companyHandle: "c1"
+              companyHandle: "c1",
+              companyName: "C1"
             },
             {
               id: expect.any(Number),
               title: "Job3",
               salary: 300,
               equity: null,
-              companyHandle: "c1"
+              companyHandle: "c1",
+              companyName: "C1"
             }
         ]
     });
