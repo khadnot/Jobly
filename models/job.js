@@ -32,21 +32,51 @@ class Job {
 
     /** Find all jobs in the database
      * 
+     * Optional searchFilters:
+     * - title: filter by case-insensitive title
+     * - minSalary: job salary that's >= minSalary
+     * - hasEquity: if true, filters jobs with equity > 0
+     * 
      * Returns [{ id, title, salary, equity, companyHandle },...]
     */
 
-    static async findAll() {
-        const result = await db.query(
-            `SELECT id,
-                    title,
-                    salary,
-                    equity,
-                    company_handle AS "companyHandle"
-             FROM jobs
-             ORDER BY title`,
-        );
+    static async findAll({ title, minSalary, hasEquity } = {}) {
+        let query = `SELECT j.id,
+                              j.title,
+                              j.salary,
+                              j.equity,
+                              j.company_handle AS "companyHandle",
+                              c.name AS "companyName"
+                       FROM jobs AS j
+                       LEFT JOIN companies AS c ON c.handle = j.company_handle`;
+        let whereExpressions = [];
+        let queryValues = [];
 
-        return result.rows;
+        // for each search term add to whereExpressions and queryValues to generate SQL query
+
+        if (title !== undefined) {
+            queryValues.push(`%${title}%`);
+            whereExpressions.push(`title ILIKE $${queryValues.length}`);
+        }
+
+        if (minSalary !== undefined) {
+            queryValues.push(minSalary);
+            whereExpressions.push(`salary >= $${queryValues.length}`);
+        }
+
+        if (hasEquity === true) {
+            whereExpressions.push(`equity > 0`);
+        }
+
+        if (whereExpressions.length > 0) {
+            query += " WHERE " + whereExpressions.join(" AND ");
+        }
+
+        // return query results
+
+        query += " ORDER BY title";
+        const jobsRes = await db.query(query, queryValues);
+        return jobsRes.rows;
     }
 
     /** Get job data based on id 
